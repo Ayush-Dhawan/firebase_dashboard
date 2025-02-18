@@ -1,62 +1,17 @@
-import { useEffect, useState } from "react";
-import { useCart } from "../../contexts/CartContext";
+const CartPage = ({customer}) => {
 
-const CartPage = ({ customer }) => {
-  const { state, dispatch } = useCart();
-  const [items, setItems] = useState(state.carts[customer.id] || []);
-
+  const {state, dispatch} = useCart();
   useEffect(() => {
-    setItems(state.carts[customer.id] || []);
-  }, [state.carts, customer.id]);
+    console.log("current customer: ", customer)
+    console.log("currrent cart: ", state.carts[customer.id])
+  }, []);
+  const [items, setItems] = useState(state.carts[customer.id] || []);
+  const [totalQuantity, setTotalQuantity] = useState(0);
+  const [totalPrice, setTotalPrice] = useState(0);
 
-  // Calculate Totals
-  const totalQuantity = items.reduce((sum, item) => sum + item.quantity, 0);
-  const totalPrice = items.reduce((sum, item) => sum + item.quantity * item.itemCost, 0);
+  console.log("state: ", totalQuantity, totalPrice)
 
-  return (
-    <div>
-      <p>Cart</p>
-      <Header />
-      {items.length > 0 ? (
-        items.map((item, index) => (
-          <CartItem
-            key={item.id}
-            item={item}
-            index={index}
-            customer={customer}
-            dispatch={dispatch}
-            setItems={setItems}
-            items={items}
-          />
-        ))
-      ) : (
-        <p style={{ textAlign: "center", fontWeight: "bold" }}>Cart is empty</p>
-      )}
-
-      {/* Summary Row */}
-      {items.length > 0 && (
-        <div style={{
-          display: "flex",
-          justifyContent: "space-between",
-          padding: "15px",
-          borderTop: "2px solid #000",
-          backgroundColor: "#f1f1f1",
-          fontFamily: "Arial, sans-serif",
-          fontWeight: "bold",
-          color: "#333",
-          marginTop: "10px",
-          borderRadius: "5px"
-        }}>
-          <span style={{ flex: 1, textAlign: "left", color: "#007bff" }}>Total</span>
-          <span style={{ flex: 1, textAlign: "center" }}>-</span>
-          <span style={{ flex: 1, textAlign: "center", color: "#fd7e14" }}>{totalQuantity}</span>
-          <span style={{ flex: 1, textAlign: "center", color: "#6c757d" }}>{totalPrice}</span>
-          <span style={{ flex: 1, textAlign: "center" }}>-</span>
-          <span style={{ flex: 1, textAlign: "center" }}>-</span>
-        </div>
-      )}
-    </div>
-  );
-};
-
-export default CartPage;
+  async function handleRedeem(){
+    const newCustomer = {...customer, points -= totalPrice}
+  await doCustomerUpdate(newCustomer)
+  }
