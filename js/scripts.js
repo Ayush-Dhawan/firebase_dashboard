@@ -1,18 +1,5 @@
-const cartReducer = (state, action) => {
-  switch (action.type) {
-    case "UPDATE_CART_QUANTITY":
-      return {
-        ...state,
-        carts: {
-          ...state.carts,
-          [action.id]: state.carts[action.id].map((item) =>
-            item.item.id === action.payload.id
-              ? { ...item, item: { ...item.item, quantity: action.payload.quantity } }
-              : item
-          ),
-        },
-      };
-    default:
-      return state;
-  }
-};
+  const [cartQuantity, setCartQuantity] = useState(0);
+
+  console.log("ye hai carts: ", state.carts[customer?.id])
+
+this takes us to the cart of the user, now using rewardId you need to check which item we are on based on item.id and then use that items.quantity attribute to set initial state of cartQuantity
