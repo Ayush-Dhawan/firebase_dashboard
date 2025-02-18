@@ -1,17 +1,25 @@
-const CartPage = ({customer}) => {
+ case 'CLEAR_CART': {
+      return {
+        ...state,
+        carts: {
+          ...state.carts,
+          [action.id]: [],
+        },
+      };
+    }
 
-  const {state, dispatch} = useCart();
-  useEffect(() => {
-    console.log("current customer: ", customer)
-    console.log("currrent cart: ", state.carts[customer.id])
-  }, []);
-  const [items, setItems] = useState(state.carts[customer.id] || []);
-  const [totalQuantity, setTotalQuantity] = useState(0);
-  const [totalPrice, setTotalPrice] = useState(0);
+  const handleSubmission = () => {
+    // setIsProcessing(true);
 
-  console.log("state: ", totalQuantity, totalPrice)
 
-  async function handleRedeem(){
-    const newCustomer = {...customer, points -= totalPrice}
-  await doCustomerUpdate(newCustomer)
+    handleUpdateCustomerPoints(customer.points - totalPrice);
+
+        toast["success"]("Redeemed", {theme: 'light'});
+
+    dispatch({
+      type: "CLEAR_CART"
+    });
+
   }
+
+use clear cart
