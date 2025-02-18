@@ -1,25 +1,13 @@
- case 'CLEAR_CART': {
-      return {
-        ...state,
-        carts: {
-          ...state.carts,
-          [action.id]: [],
-        },
-      };
-    }
 
-  const handleSubmission = () => {
-    // setIsProcessing(true);
+  useEffect(() => {
+    console.log("state: ", totalQuantity, totalPrice)
+  }, [totalQuantity, totalPrice]);
 
+  useEffect(() => {
+    setItems(state.carts[customer.id])
+    setTotalQuantity(items ? items.reduce((sum, item) => sum + Number(item.item.quantity), 0): 0)
+    setTotalPrice(items? items.reduce((sum, item) => sum + Number(item.item.quantity) * Number(item.item.itemCost), 0): 0)
 
-    handleUpdateCustomerPoints(customer.points - totalPrice);
+  }, [state.carts, customer.id, state.carts[customer.id]]);
 
-        toast["success"]("Redeemed", {theme: 'light'});
-
-    dispatch({
-      type: "CLEAR_CART"
-    });
-
-  }
-
-use clear cart
+totalPrice and totalQuantity runs one state behind
