@@ -9,7 +9,13 @@ const CartPage = ({customer}) => {
     console.log("currrent cart: ", state.carts[customer.id])
   }, []);
 
+
+
   const [items, setItems] = useState(state.carts[customer.id])
+  useEffect(() => {
+    setItems(state.carts[customer.id])
+  }, [state.carts, customer.id]);
+
   return(
     <div>
       <p>Cart</p>
@@ -160,3 +166,6 @@ function Header() {
 }
 
 export default CartPage;
+
+
+below the cartItems mapping i want a row which shows total of all columns above such as totalPrice, etc
