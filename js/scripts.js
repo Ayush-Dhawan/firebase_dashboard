@@ -1,227 +1,55 @@
-import React, {useEffect, useState} from 'react';
-import {Link, useParams} from 'react-router-dom';
+import React, { useEffect, useState } from 'react'; import { Link, useParams } from 'react-router-dom'; import { getReward, getRewardsList } from '../../api/RewardsApi'; import RewardsCard from './RewardsCard'; import { doFulfillment } from '../../api/FulfillmentApi'; import RewardsModal from './RewardsModal'; import { toast, ToastContainer } from 'react-toastify';
 
-import {getReward, getRewardsList} from '../../api/RewardsApi';
-import RewardsCard from './RewardsCard';
-import {doFulfillment} from '../../api/FulfillmentApi';
-import RewardsModal from './RewardsModal';
-import {toast, ToastContainer} from 'react-toastify';
-import {useCart} from '../../contexts/CartContext';
+const RewardsDetailsPage = ({ category = { name: 'unknown', catalogId: false }, handleUpdateCustomerPoints, handleCategoryChange, customer = { username: 'unknown', points: 0 } }) => { const { rewardId } = useParams(); const initialState = { itemDescription: 'loading', itemName: 'loading' }; const [reward, setReward] = useState(initialState); const [items, setItems] = useState([]); const [qty, setQty] = useState(1); const [showRewardsModal, setShowRewardsModal] = useState(false); const [pointsCost, setPointsCost] = useState(0); const [isProcessing, setIsProcessing] = useState(false); const [isInCart, setIsInCart] = useState(false); const [cartQuantity, setCartQuantity] = useState(0);
 
-const RewardsDetailsPage = ({
-  category = {
-    name: 'unknown',
-    catalogId: false
-  },
-  handleUpdateCustomerPoints,
-  handleCategoryChange,
-  customer = {username: 'unknown', points: 0}
-}) => {
+useEffect(() => { setPointsCost(qty * reward.itemCost); }, [qty, reward.itemCost]);
 
+useEffect(() => { const getRewardItem = async () => { const data = await getReward(rewardId); setReward(data); if (!category.id) { handleCategoryChange(data.rewardCatalogId); } }; getRewardItem(); }, [rewardId, category.id, handleCategoryChange]);
 
-  const {rewardId} = useParams();
-  const initialState = {itemDescription: 'loading', itemName: 'loading'}
-  const [reward, setReward] = useState(initialState);
-  const [items, setItems] = useState([]);
-  const [qty, setQty] = useState(1);
-  const [showRewardsModal, setShowRewardsModal] = useState(false);
-  const [pointsCost, setPointsCost] = useState(0);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const {state, dispatch} = useCart();
-  const [isInCart, setIsInCart] = useState(false);
-  const [cartQuantity, setCartQuantity] = useState(0);
+useEffect(() => { const customerCart = JSON.parse(localStorage.getItem(cart_${customer.id})) || []; const cartItem = customerCart.find(item => item.id === Number(rewardId)); setIsInCart(!!cartItem); setCartQuantity(cartItem ? cartItem.quantity : 0); }, [rewardId, customer.id]);
 
-  const cardOptions = {showDescription: false};
+useEffect(() => { if (category.id || reward.rewardCatalogId) { const setRandomRewardItems = async () => { const data = await getRewardsList(category.id || reward.rewardCatalogId); setItems(data.slice(0, 6)); }; setRandomRewardItems(); } else { setItems([]); } }, [rewardId, category.id, reward.rewardCatalogId]);
 
-  useEffect(() => {
-    setPointsCost(qty * reward.itemCost);
-  }, [qty, reward.itemCost]);
+const toggleShowRewardsModal = e => { e.preventDefault(); setShowRewardsModal(!showRewardsModal); };
 
-  useEffect(() => {
-    const getRewardItem = async () => {
-      const data = await getReward(rewardId);
-      setReward(data)
-      if (!category.id) {
-        handleCategoryChange(data.rewardCatalogId);
-      }
-    }
-    getRewardItem();
-  }, [rewardId, category.id, handleCategoryChange]);
+const handleSubmission = qty => { setIsProcessing(true); const fulfillment = { customerId: customer.id, qty, rewardsItemId: reward.id };
 
-  function verifyInCart(customerId, itemId){
-    console.log("in verify cart,,,"+ rewardId )
-    const customerCart = state.carts[customerId] || [];
-
-    setIsInCart(customerCart.some(item => item.item.id === Number(rewardId)))
-    console.log("bool check: ", customerCart.some(item => item.item.id === Number(rewardId)), customerCart)
+doFulfillment(fulfillment).then(response => {
+  if (response?.pointsLeft) {
+    handleUpdateCustomerPoints(response.pointsLeft);
   }
-
-  useEffect(() => {
-    verifyInCart(customer.id, rewardId)
-  }, [rewardId, customer.id]);
-
-  useEffect(() => {
-    if (category.id || reward.rewardCatalogId) {
-      const setRandomRewardItems = async () => {
-        const data = await getRewardsList(category.id || reward.rewardCatalogId);
-        const finalRandomItemArray = [];
-
-        while (finalRandomItemArray.length < 6) {
-          const index = Math.floor(Math.random() * data.length);
-          if (!finalRandomItemArray.includes(data[index])) {
-            finalRandomItemArray.push(data[index])
-          }
-        }
-        setItems(finalRandomItemArray)
-      }
-      setRandomRewardItems()
-    } else {
-      setItems([]);
-    }
-  }, [rewardId, category.id, reward.rewardCatalogId]);
-
-  const toggleShowRewardsModal = e => {
-    e.preventDefault();
-    setShowRewardsModal(!showRewardsModal);
-  }
-
-  const handleSubmission = (qty) => {
-    setIsProcessing(true);
-    const fulfillment = {
-      customerId: customer.id,
-      qty: qty,
-      rewardsItemId: reward.id
-    }
-
-
-
-    doFulfillment(fulfillment).then(response => {
-        if (response?.pointsLeft) {
-          handleUpdateCustomerPoints(response?.pointsLeft);
-        }
-        const type = response?.type === 'Success' ? 'success' : 'error';
-
-        const message = response?.message + '. You have ' + customer?.points+' points remaining.';
-        toast[type](message, {theme: 'light'});
-        setIsProcessing(false);
-        setShowRewardsModal(!showRewardsModal);
-      }
-    );
-  }
-  const addItemToCart = (e) => {
-    e.preventDefault();
-    const rewardWithQuantity = {...reward, quantity: 1};
-    if (!reward) return;
-    dispatch({
-      type: "ADD_TO_CART",
-      id: customer.id,
-      payload: { item: rewardWithQuantity },
-    });
-    setCartQuantity(1);
-    setIsInCart(true)
-  };
-  const updateQuantity = (e, id, newQuantity) => {
-    e.preventDefault();
-    // const rewardWithQuantity = {...reward, quantity: 1}
-    if (newQuantity < 1) {
-      dispatch({
-        type: "REMOVE_FROM_CART",
-        id: customer.id,
-        payload: Number(rewardId),  // Using rewardId to remove the item
-      });
-      setIsInCart(false);
-      setCartQuantity(0);  // Set quantity to 0 when removed
-    }
-      dispatch({
-        type: "UPDATE_CART_QUANTITY",
-        id: customer.id,
-          payload: { rewardId, quantity: newQuantity },
-      });
-      setCartQuantity(newQuantity)
-
-    // else {
-    //   dispatch({
-    //     type: "REMOVE_FROM_CART",
-    //     id: customer.id,
-    //     payload: id,
-    //   });
-    //   setCartQuantity(0)
-    // }
-  };
-  return (
-    <main>
-      <nav aria-label="breadcrumb" role="navigation">
-        <ol className="breadcrumb">
-          <li className="breadcrumb-item"><Link to="/">Home</Link></li>
-          <li className="breadcrumb-item"><Link to="/category">Reward Categories</Link></li>
-          <li className="breadcrumb-item"><Link to={`/category/${category.id}`}>{category.name}</Link></li>
-          <li className="breadcrumb-item active" aria-current="page">{reward.itemName}</li>
-        </ol>
-      </nav>
-      <div className="container-fluid pt-3">
-        <div className="row">
-          <div className="col-5 text-center">
-            <RewardsCard reward={reward} isUpdatable={false} cardOptions={cardOptions} />
-          </div>
-          <div className="col-7 reward-item-panel">
-            <h1 className="text-uppercase">{reward.itemName}</h1>
-            <hr />
-            <p>{reward.itemDescription}</p>
-            <form>
-              <div className="form-row">
-                <div className="col-10">
-                  <h2 className="text-success">{reward.itemCost} Points</h2>
-                </div>
-                <div className="col">
-                  <select className="form-control" onChange={e => setQty(e.target.value)} value={qty}>
-                    <option>1</option>
-                    <option>2</option>
-                    <option>3</option>
-                    <option>4</option>
-                    <option>5</option>
-                  </select>
-                </div>
-                <div className="col">
-                  {(customer.points >= pointsCost) ?
-                    <>
-                      <button type="submit" className="btn btn-primary" onClick={toggleShowRewardsModal}>Redeem</button>
-                      {isInCart ? (
-
-                        <>
-                          <button onClick={(e) => updateQuantity(e, rewardId, cartQuantity + 1)}>+</button>
-                          {cartQuantity}
-                          <button onClick={(e) => updateQuantity(e, rewardId, cartQuantity - 1)}>-</button>
-                          {/*<p>is in cart</p>*/}
-                        </>
-                      ) : (
-                        <button onClick={addItemToCart}>Add to cart {`${isInCart}`}</button>
-                      )}
-                    </> :
-                    <small>Not enough points</small>}
-                </div>
-              </div>
-            </form>
-          </div>
-        </div>
-        <div className="row mt-5">
-          <h3>Not so sure? How about some other options?</h3>
-        </div>
-        <div className="row-cols-1 row-cols-md-6 card-deck">
-          {items?.map(reward => (
-            <RewardsCard key={reward.id} reward={reward} isUpdatable={true} cardOptions={cardOptions} />
-          ))}
-        </div>
-      </div>
-     <RewardsModal customer={customer} reward={reward} showRewardsModal={showRewardsModal} toggleShowRewardsModal={toggleShowRewardsModal} handleSubmission={handleSubmission}
-      initQty={qty} isProcessing={isProcessing}/>
-      <ToastContainer
-        position='top-right'
-        autoClose={3000}
-        hideProgressBar={false}
-        newestOnTop={true}
-      />
-    </main>
+  toast[response?.type === 'Success' ? 'success' : 'error'](
+    `${response?.message}. You have ${customer?.points} points remaining.`,
+    { theme: 'light' }
   );
+  setIsProcessing(false);
+  setShowRewardsModal(false);
+});
+
 };
 
-export default RewardsDetailsPage
+const updateLocalStorageCart = (newCart) => { localStorage.setItem(cart_${customer.id}, JSON.stringify(newCart)); };
+
+const addItemToCart = e => { e.preventDefault(); const customerCart = JSON.parse(localStorage.getItem(cart_${customer.id})) || []; const newCart = [...customerCart, { ...reward, quantity: 1 }]; updateLocalStorageCart(newCart); setCartQuantity(1); setIsInCart(true); };
+
+const updateQuantity = (e, newQuantity) => { e.preventDefault(); let customerCart = JSON.parse(localStorage.getItem(cart_${customer.id})) || [];
+
+if (newQuantity < 1) {
+  customerCart = customerCart.filter(item => item.id !== Number(rewardId));
+  setIsInCart(false);
+} else {
+  customerCart = customerCart.map(item =>
+    item.id === Number(rewardId) ? { ...item, quantity: newQuantity } : item
+  );
+}
+
+updateLocalStorageCart(customerCart);
+setCartQuantity(newQuantity);
+
+};
+
+return ( <main> <nav aria-label="breadcrumb" role="navigation"> <ol className="breadcrumb"> <li className="breadcrumb-item"><Link to="/">Home</Link></li> <li className="breadcrumb-item"><Link to="/category">Reward Categories</Link></li> <li className="breadcrumb-item"><Link to={/category/${category.id}}>{category.name}</Link></li> <li className="breadcrumb-item active" aria-current="page">{reward.itemName}</li> </ol> </nav> <div className="container-fluid pt-3"> <div className="row"> <div className="col-5 text-center"> <RewardsCard reward={reward} isUpdatable={false} /> </div> <div className="col-7 reward-item-panel"> <h1 className="text-uppercase">{reward.itemName}</h1> <hr /> <p>{reward.itemDescription}</p> <h2 className="text-success">{reward.itemCost} Points</h2> <select className="form-control" onChange={e => setQty(e.target.value)} value={qty}> {[1, 2, 3, 4, 5].map(num => ( <option key={num}>{num}</option> ))} </select> {customer.points >= pointsCost ? ( <> <button className="btn btn-primary" onClick={toggleShowRewardsModal}>Redeem</button> {isInCart ? ( <> <button onClick={e => updateQuantity(e, cartQuantity + 1)}>+</button> {cartQuantity} <button onClick={e => updateQuantity(e, cartQuantity - 1)}>-</button> </> ) : ( <button onClick={addItemToCart}>Add to cart</button> )} </> ) : ( <small>Not enough points</small> )} </div> </div> </div> <RewardsModal customer={customer} reward={reward} showRewardsModal={showRewardsModal} toggleShowRewardsModal={toggleShowRewardsModal} handleSubmission={handleSubmission} initQty={qty} isProcessing={isProcessing} /> <ToastContainer position='top-right' autoClose={3000} hideProgressBar={false} newestOnTop={true} /> </main> ); };
+
+export default RewardsDetailsPage;
+
+  
