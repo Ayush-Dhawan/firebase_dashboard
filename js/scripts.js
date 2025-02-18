@@ -1,135 +1,252 @@
-Here’s a demo component that allows updating the quantity of items in a user’s cart.
+CartCoNTEXT.JS
 
+import React, { createContext, useContext, useReducer } from "react";
 
----
+const CartContext = createContext(null);
 
-Enhancements:
+const initialState = { carts: {}, };
 
-Users can increase or decrease item quantity.
+const cartReducer = (state, action) => {
+  switch (action.type) {
+    case "ADD_TO_CART": return { ...state, carts: { ...state.carts, [action.id]: [...(state.carts[action.id] || []), action.payload], }, };
+    case "UPDATE_CART_QUANTITY":
+      return {
+        ...state,
+        carts: {
+          ...state.carts,
+          [action.id]: state.carts[action.id].map((item) =>
+            item.id === action.payload.id
+              ? { ...item, quantity: action.payload.quantity }
+              : item
+          ),
+        },
+      };
+    case "REMOVE_FROM_CART": return { ...state, carts: { ...state.carts, [action.id]: state.carts[action.id]?.filter((item) => item.id !== action.payload) || [], }, };
+    case "CLEAR_CART": return { ...state, carts: { ...state.carts, [action.id]: [], }, };
+    default: return state;
+  }
+};
 
-If quantity reaches zero, the item is removed from the cart.
-
-
-
----
-
-Demo Component: Updating Cart Quantity
-
-import React, { useState } from "react";
-import { useCart } from "./CartContext";
-
-const CartDemo = () => {
-  const { state, dispatch } = useCart();
-  const [userId, setUserId] = useState("1"); // Default user ID
-  const [product, setProduct] = useState("");
-
-  const addItem = () => {
-    if (!product) return;
-
-    dispatch({
-      type: "ADD_TO_CART",
-      userId,
-      payload: { id: Date.now(), name: product, quantity: 1 }, // Default quantity
-    });
-
-    setProduct(""); // Clear input after adding
-  };
-
-  const updateQuantity = (id, newQuantity) => {
-    if (newQuantity > 0) {
-      dispatch({
-        type: "UPDATE_CART_QUANTITY",
-        userId,
-        payload: { id, quantity: newQuantity },
-      });
-    } else {
-      dispatch({
-        type: "REMOVE_FROM_CART",
-        userId,
-        payload: id,
-      });
-    }
-  };
-
-  const userCart = state.carts[userId] || [];
+export const CartProvider = ({ children }) => { const [state, dispatch] = useReducer(cartReducer, initialState);
 
   return (
-    <div>
-      <h2>Cart for User ID: {userId}</h2>
+    <CartContext.Provider value={{ state, dispatch }}> {children} </CartContext.Provider> );
+};
 
-      {/* User ID Input */}
-      <input
-        type="text"
-        placeholder="Enter User ID"
-        value={userId}
-        onChange={(e) => setUserId(e.target.value)}
+export const useCart = () => { return useContext(CartContext); };
+
+
+rEWARDdETAIL.JS
+
+import React, {useEffect, useState} from 'react';
+import {Link, useParams} from 'react-router-dom';
+
+import {getReward, getRewardsList} from '../../api/RewardsApi';
+import RewardsCard from './RewardsCard';
+import {doFulfillment} from '../../api/FulfillmentApi';
+import RewardsModal from './RewardsModal';
+import {toast, ToastContainer} from 'react-toastify';
+import {useCart} from '../../contexts/CartContext';
+
+const RewardsDetailsPage = ({
+  category = {
+    name: 'unknown',
+    catalogId: false
+  },
+  handleUpdateCustomerPoints,
+  handleCategoryChange,
+  customer = {username: 'unknown', points: 0}
+}) => {
+
+
+  const {rewardId} = useParams();
+  const initialState = {itemDescription: 'loading', itemName: 'loading'}
+  const [reward, setReward] = useState(initialState);
+  const [items, setItems] = useState([]);
+  const [qty, setQty] = useState(1);
+  const [showRewardsModal, setShowRewardsModal] = useState(false);
+  const [pointsCost, setPointsCost] = useState(0);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const {state, dispatch} = useCart();
+  const [isInCart, setIsInCart] = useState(false);
+  const [cartQuantity, setCartQuantity] = useState(0);
+
+  const cardOptions = {showDescription: false};
+
+  useEffect(() => {
+    setPointsCost(qty * reward.itemCost);
+  }, [qty, reward.itemCost]);
+
+  useEffect(() => {
+    const getRewardItem = async () => {
+      const data = await getReward(rewardId);
+      setReward(data)
+      if (!category.id) {
+        handleCategoryChange(data.rewardCatalogId);
+      }
+    }
+    getRewardItem();
+  }, [rewardId, category.id, handleCategoryChange]);
+
+  function verifyInCart(customerId, itemId){
+    const customerCart = state.carts[customerId] || [];
+    setIsInCart(customerCart.some(item => item.id === itemId))
+  }
+
+  useEffect(() => {
+    verifyInCart(customer?.id, rewardId)
+  }, [state.carts, customer, rewardId]);
+
+  useEffect(() => {
+    if (category.id || reward.rewardCatalogId) {
+      const setRandomRewardItems = async () => {
+        const data = await getRewardsList(category.id || reward.rewardCatalogId);
+        const finalRandomItemArray = [];
+
+        while (finalRandomItemArray.length < 6) {
+          const index = Math.floor(Math.random() * data.length);
+          if (!finalRandomItemArray.includes(data[index])) {
+            finalRandomItemArray.push(data[index])
+          }
+        }
+        setItems(finalRandomItemArray)
+      }
+      setRandomRewardItems()
+    } else {
+      setItems([]);
+    }
+  }, [rewardId, category.id, reward.rewardCatalogId]);
+
+  const toggleShowRewardsModal = e => {
+    e.preventDefault();
+    setShowRewardsModal(!showRewardsModal);
+  }
+
+  const handleSubmission = (qty) => {
+    setIsProcessing(true);
+    const fulfillment = {
+      customerId: customer.id,
+      qty: qty,
+      rewardsItemId: reward.id
+    }
+
+
+
+    doFulfillment(fulfillment).then(response => {
+        if (response?.pointsLeft) {
+          handleUpdateCustomerPoints(response?.pointsLeft);
+        }
+        const type = response?.type === 'Success' ? 'success' : 'error';
+
+        const message = response?.message + '. You have ' + customer?.points+' points remaining.';
+        toast[type](message, {theme: 'light'});
+        setIsProcessing(false);
+        setShowRewardsModal(!showRewardsModal);
+      }
+    );
+  }
+  const addItemToCart = (e) => {
+    e.preventDefault();
+    if (!reward) return;
+    dispatch({
+      type: "ADD_TO_CART",
+      id: customer.id,
+      payload: { item: {...reward, quantity: 1} },
+    });
+    setCartQuantity(1);
+  };
+  const updateQuantity = (e, id, newQuantity) => {
+    e.preventDefault();
+
+      dispatch({
+        type: "UPDATE_CART_QUANTITY",
+        id: customer.id,
+          payload: { id, quantity: cartQuantity + 1 },
+      });
+      setCartQuantity(cartQuantity + 1)
+
+    // else {
+    //   dispatch({
+    //     type: "REMOVE_FROM_CART",
+    //     id: customer.id,
+    //     payload: id,
+    //   });
+    //   setCartQuantity(0)
+    // }
+  };
+  return (
+    <main>
+      <nav aria-label="breadcrumb" role="navigation">
+        <ol className="breadcrumb">
+          <li className="breadcrumb-item"><Link to="/">Home</Link></li>
+          <li className="breadcrumb-item"><Link to="/category">Reward Categories</Link></li>
+          <li className="breadcrumb-item"><Link to={`/category/${category.id}`}>{category.name}</Link></li>
+          <li className="breadcrumb-item active" aria-current="page">{reward.itemName}</li>
+        </ol>
+      </nav>
+      <div className="container-fluid pt-3">
+        <div className="row">
+          <div className="col-5 text-center">
+            <RewardsCard reward={reward} isUpdatable={false} cardOptions={cardOptions} />
+          </div>
+          <div className="col-7 reward-item-panel">
+            <h1 className="text-uppercase">{reward.itemName}</h1>
+            <hr />
+            <p>{reward.itemDescription}</p>
+            <form>
+              <div className="form-row">
+                <div className="col-10">
+                  <h2 className="text-success">{reward.itemCost} Points</h2>
+                </div>
+                <div className="col">
+                  <select className="form-control" onChange={e => setQty(e.target.value)} value={qty}>
+                    <option>1</option>
+                    <option>2</option>
+                    <option>3</option>
+                    <option>4</option>
+                    <option>5</option>
+                  </select>
+                </div>
+                <div className="col">
+                  {(customer.points >= pointsCost) ?
+                    <>
+                      <button type="submit" className="btn btn-primary" onClick={toggleShowRewardsModal}>Redeem</button>
+                      {cartQuantity <= 0 ? <button onClick={addItemToCart}>Add to cart</button> : <>
+                        <button onClick={(e) => updateQuantity(e, rewardId, cartQuantity + 1)}>+</button>
+                        {cartQuantity}
+                        <button onClick={(e) => updateQuantity(e, rewardId, cartQuantity - 1)}>-</button>
+                        <p>is in cart</p>
+                      </>}
+                    </> :
+                    <small>Not enough points</small>}
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+        <div className="row mt-5">
+          <h3>Not so sure? How about some other options?</h3>
+        </div>
+        <div className="row-cols-1 row-cols-md-6 card-deck">
+          {items?.map(reward => (
+            <RewardsCard key={reward.id} reward={reward} isUpdatable={true} cardOptions={cardOptions} />
+          ))}
+        </div>
+      </div>
+     <RewardsModal customer={customer} reward={reward} showRewardsModal={showRewardsModal} toggleShowRewardsModal={toggleShowRewardsModal} handleSubmission={handleSubmission}
+      initQty={qty} isProcessing={isProcessing}/>
+      <ToastContainer
+        position='top-right'
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={true}
       />
-
-      {/* Add Product */}
-      <input
-        type="text"
-        placeholder="Enter product name"
-        value={product}
-        onChange={(e) => setProduct(e.target.value)}
-      />
-      <button type="button" onClick={addItem}>Add to Cart</button>
-
-      {/* Cart Items */}
-      <ul>
-        {userCart.map((item) => (
-          <li key={item.id}>
-            {item.name} - Quantity: {item.quantity} 
-            <button onClick={() => updateQuantity(item.id, item.quantity + 1)}>+</button>
-            <button onClick={() => updateQuantity(item.id, item.quantity - 1)}>-</button>
-          </li>
-        ))}
-      </ul>
-    </div>
+    </main>
   );
 };
 
-export default CartDemo;
-
-
----
-
-Cart Context Update
-
-Modify the reducer in CartContext.js to handle quantity updates:
-
-case "UPDATE_CART_QUANTITY":
-  return {
-    ...state,
-    carts: {
-      ...state.carts,
-      [action.userId]: state.carts[action.userId].map((item) =>
-        item.id === action.payload.id
-          ? { ...item, quantity: action.payload.quantity }
-          : item
-      ),
-    },
-  };
-
-
----
-
-How It Works
-
-1. Users enter their userId and add a product.
-
-
-2. Products start with quantity: 1.
-
-
-3. Users can increase/decrease quantity:
-
-If quantity reaches zero, the item is removed from the cart.
+export default RewardsDetailsPage
 
 
 
-4. Updates are applied dynamically.
-
-
-
-This ensures quantity management per user. Let me know if you need improvements!
-
+  
