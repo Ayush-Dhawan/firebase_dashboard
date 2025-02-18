@@ -260,3 +260,34 @@ export const useCart = () => { return useContext(CartContext); };
 
 
 in rewardDetails page.jsx make remove from cart work please inside updateQuantity function
+case "REMOVE_FROM_CART":
+  return {
+    ...state,
+    carts: {
+      ...state.carts,
+      [action.id]: state.carts[action.id]?.filter((item) => item.item.id !== action.payload) || [],
+    },
+  };
+
+const updateQuantity = (e, id, newQuantity) => {
+  e.preventDefault();
+
+  // If newQuantity is less than 1, remove the item from the cart
+  if (newQuantity < 1) {
+    dispatch({
+      type: "REMOVE_FROM_CART",
+      id: customer.id,
+      payload: Number(rewardId),  // Using rewardId to remove the item
+    });
+    setIsInCart(false);
+    setCartQuantity(0);  // Set quantity to 0 when removed
+  } else {
+    // Otherwise, update the quantity of the item in the cart
+    dispatch({
+      type: "UPDATE_CART_QUANTITY",
+      id: customer.id,
+      payload: { rewardId, quantity: newQuantity },
+    });
+    setCartQuantity(newQuantity);  // Update the quantity
+  }
+};
