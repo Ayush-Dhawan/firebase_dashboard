@@ -1,14 +1,50 @@
-import React, { createContext, useContext, useReducer } from "react";
+import React, { useState } from "react";
+import { useCart } from "./CartContext";
 
-// Create Cart Context const CartContext = createContext();
+const CartDemo = () => {
+  const { state, dispatch } = useCart();
+  const [userId, setUserId] = useState("1"); // Default user ID for demo
+  const [product, setProduct] = useState("");
 
-// Initial state const initialState = { carts: {}, };
+  const addItem = () => {
+    if (!product) return;
+    dispatch({
+      type: "ADD_TO_CART",
+      userId,
+      payload: { id: Date.now(), name: product },
+    });
+    setProduct("");
+  };
 
-// Reducer function const cartReducer = (state, action) => { switch (action.type) { case "ADD_TO_CART": return { ...state, carts: { ...state.carts, [action.username]: [...(state.carts[action.username] || []), action.payload], }, }; case "REMOVE_FROM_CART": return { ...state, carts: { ...state.carts, [action.username]: state.carts[action.username]?.filter((item) => item.id !== action.payload) || [], }, }; case "CLEAR_CART": return { ...state, carts: { ...state.carts, [action.username]: [], }, }; default: return state; } };
+  const userCart = state.carts[userId] || []; // Ensure cart exists for the user
 
-// CartProvider component export const CartProvider = ({ children }) => { const [state, dispatch] = useReducer(cartReducer, initialState);
+  return (
+    <div>
+      <h2>Cart for User ID: {userId}</h2>
 
-return ( <CartContext.Provider value={{ state, dispatch }}> {children} </CartContext.Provider> ); };
+      {/* User ID Input */}
+      <input
+        type="text"
+        placeholder="Enter User ID"
+        value={userId}
+        onChange={(e) => setUserId(e.target.value)}
+      />
 
-// Custom hook to use the cart context export const useCart = () => { return useContext(CartContext); };
+      {/* Add Product */}
+      <input
+        type="text"
+        placeholder="Enter product name"
+        value={product}
+        onChange={(e) => setProduct(e.target.value)}
+      />
+      <button onClick={addItem}>Add to Cart</button>
 
+      {/* Cart Items */}
+      <ul>
+        {userCart.map((item) => (
+          <li key={item.id}>{item.name}</li>
+        ))}
+      </ul>
+    </div>
+  );
+};
