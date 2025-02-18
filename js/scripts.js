@@ -1,51 +1,18 @@
-
-Object
-1
-: 
-Array(1)
-0
-: 
-item
-: 
-id
-: 
-1
-imgSrc
-: 
-"giftcard1"
-itemCost
-: 
-50
-itemDescription
-: 
-"Use your points to shop at Amazon"
-itemName
-: 
-"Amazon"
-quantity
-: 
-1
-rewardCatalogId
-: 
-1
-rewardsMessage
-: 
-undefined
-status
-: 
-"Inactive"
-[[Prototype]]
-: 
-Object
-[[Prototype]]
-: 
-Object
-length
-: 
-1
-[[Prototype]]
-: 
-Array(0)
-[[Prototype]]
-: 
-Object
+const cartReducer = (state, action) => {
+  switch (action.type) {
+    case "UPDATE_CART_QUANTITY":
+      return {
+        ...state,
+        carts: {
+          ...state.carts,
+          [action.id]: state.carts[action.id].map((item) =>
+            item.item.id === action.payload.id
+              ? { ...item, item: { ...item.item, quantity: action.payload.quantity } }
+              : item
+          ),
+        },
+      };
+    default:
+      return state;
+  }
+};
