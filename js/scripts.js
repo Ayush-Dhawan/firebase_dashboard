@@ -55,3 +55,68 @@ statusProcessed
 "new"
 
 an item in transition data for reference
+
+
+import { useState, useEffect } from "react";
+
+const TransactionFilter = ({ customer }) => {
+  const [transactions, setTransactions] = useState([]);
+  const [filteredTransactions, setFilteredTransactions] = useState([]);
+  const [startDate, setStartDate] = useState();
+  const [endDate, setEndDate] = useState();
+
+  useEffect(() => {
+    const setTrans = async () => {
+      const data = await getTransactions(customer.id);
+      setTransactions(data);
+    };
+    if (transactions.length === 0) {
+      setTrans();
+    }
+  }, [customer.id, transactions.length]);
+
+  useEffect(() => {
+    console.log("Start Date:", startDate);
+  }, [startDate]);
+
+  useEffect(() => {
+    if (startDate && endDate) {
+      if (new Date(endDate) < new Date(startDate)) {
+        alert("End date cannot be before start date.");
+        setEndDate(undefined);
+        return;
+      }
+
+      const filtered = transactions.filter((txn) => {
+        const txnDate = new Date(txn.creationDate);
+        return txnDate >= new Date(startDate) && txnDate <= new Date(endDate);
+      });
+
+      setFilteredTransactions(filtered);
+    } else {
+      setFilteredTransactions(transactions);
+    }
+  }, [startDate, endDate, transactions]);
+
+  return (
+    <div>
+      <input
+        type="date"
+        value={startDate || ""}
+        onChange={(e) => setStartDate(e.target.value)}
+      />
+      <input
+        type="date"
+        value={endDate || ""}
+        onChange={(e) => setEndDate(e.target.value)}
+      />
+      <ul>
+        {filteredTransactions.map((txn) => (
+          <li key={txn.id}>{txn.productName} - ${txn.creditCharge}</li>
+        ))}
+      </ul>
+    </div>
+  );
+};
+
+export default TransactionFilter;
