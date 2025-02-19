@@ -18,3 +18,29 @@ i want to return entire reward catalog items for those 10 most fulfilled ones
     ORDER BY occurrence DESC
     LIMIT 10;
 </select>
+
+import React from "react";
+
+const RewardItemCard = ({ reward }) => {
+  return (
+    <div className="col-md-4">
+      <div className="card shadow-sm mb-4">
+        <img src={reward.imgSrc} className="card-img-top" alt={reward.itemName} />
+        <div className="card-body">
+          <h5 className="card-title">{reward.itemName}</h5>
+          <p className="card-text">{reward.itemDescription}</p>
+          <ul className="list-group list-group-flush">
+            <li className="list-group-item">
+              <strong>Cost:</strong> ${reward.itemCost}
+            </li>
+            <li className="list-group-item">
+              <strong>Times Fulfilled:</strong> {reward.fulfillmentCount}
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default RewardItemCard;
