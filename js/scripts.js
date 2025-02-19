@@ -44,3 +44,13 @@ const RewardItemCard = ({ reward }) => {
 };
 
 export default RewardItemCard;
+
+  <select id="getTop10FulfillmentsByRewardItem" resultType="com.jpmorgan.et.model.RewardItem">
+    SELECT rci.id, rci.item_name, rci.img_src, rci.item_cost, rci.item_description, 
+           COUNT(f.reward_catalog_item_id) AS fulfillment_count
+    FROM rewards_catalog_items rci
+    LEFT JOIN fulfillment f ON rci.id = f.reward_catalog_item_id
+    GROUP BY rci.id, rci.item_name, rci.img_src, rci.item_cost, rci.item_description
+    ORDER BY fulfillment_count DESC
+    LIMIT 10;
+</select>
