@@ -1,40 +1,47 @@
-  <select id="getTop10FulfillmentsByRewardItem" resultMap="com.jpmorgan.et.model.RewardItem">
-    SELECT rci.id, rci.item_name, COUNT(f.reward_catalog_item_id) AS occurence FROM rewards_catalog_items rci LEFT JOIN fulfillment f on rci.id = f.reward_catalog_item_id
-    GROUP BY rci.id, rci.item_name, rci.img_src ORDER BY occurence DESC LIMIT 10;
-  </select>
+import {useEffect, useState} from 'react';
+import {getTop10FulFillments} from '../../api/FulfillmentApi';
+import NavBar from '../common/NavBar';
 
-table fulfillment -> id, customer_id, reward_catalog_item_id, qty, status, creation_date
-table rewards_catalog_items -> id, reward_catalog_id, item_name, item_cost, item_description, status, img_src
 
-Unable to understand why this doesnt work
+export default function MostRedeemedRewards(){
+  const [rewards, setRewards] = useState([]);
 
-i want to get top 10 most fulfilled items, this can be obained by checking the total number of times a reward_catalog_item has been fulfilled using reward_catalog_item_id field in the fulfillment table
-i want to return entire reward catalog items for those 10 most fulfilled ones
-<select id="getTop10FulfillmentsByRewardItem" resultType="com.jpmorgan.et.model.RewardItem">
-    SELECT rci.id, rci.item_name, rci.img_src, rci.item_cost, rci.item_description, COUNT(f.reward_catalog_item_id) AS occurrence
-    FROM rewards_catalog_items rci
-    LEFT JOIN fulfillment f ON rci.id = f.reward_catalog_item_id
-    GROUP BY rci.id, rci.item_name, rci.img_src, rci.item_cost, rci.item_description
-    ORDER BY occurrence DESC
-    LIMIT 10;
-</select>
+  useEffect(() => {
+    async function getMostRedeemedRewards (){
+      const res = await getTop10FulFillments();
+      setRewards(res);
+      console.log("res: ", res)
+    }
 
-import React from "react";
+    getMostRedeemedRewards();
+  }, []);
+  return(
+    <>
+      {/*add select tag here*/}
+    <div style={{display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
+      {/*<NavBar />*/}
+      <div style={{display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '5px', alignItems: 'center', justifyContent: 'center'}}>
+        {rewards && rewards.map((item, index) => <RewardItemCard reward={item} key={index} /> )}
+      </div>
+    </div>
+    </>
+      )
+      }
 
-const RewardItemCard = ({ reward }) => {
+const RewardItemCard = ({reward}) => {
   return (
-    <div className="col-md-4">
+    <div className="col-md-4" style={{width: '100%'}}>
       <div className="card shadow-sm mb-4">
-        <img src={reward.imgSrc} className="card-img-top" alt={reward.itemName} />
+        <img src={`${process.env.PUBLIC_URL}/images/${reward.img_src}.jpg`} className="card-img-top" alt={reward.itemName} />
         <div className="card-body">
-          <h5 className="card-title">{reward.itemName}</h5>
-          <p className="card-text">{reward.itemDescription}</p>
+          <h5 className="card-title">{reward.item_name}</h5>
+          <p className="card-text">{reward.item_description}</p>
           <ul className="list-group list-group-flush">
             <li className="list-group-item">
-              <strong>Cost:</strong> ${reward.itemCost}
+              <strong>Cost:</strong> ${reward.item_cost}
             </li>
             <li className="list-group-item">
-              <strong>Times Fulfilled:</strong> {reward.fulfillmentCount}
+              <strong>Times Fulfilled:</strong> {reward.fulfillment_count }
             </li>
           </ul>
         </div>
@@ -42,15 +49,3 @@ const RewardItemCard = ({ reward }) => {
     </div>
   );
 };
-
-export default RewardItemCard;
-
-  <select id="getTop10FulfillmentsByRewardItem" resultType="com.jpmorgan.et.model.RewardItem">
-    SELECT rci.id, rci.item_name, rci.img_src, rci.item_cost, rci.item_description, 
-           COUNT(f.reward_catalog_item_id) AS fulfillment_count
-    FROM rewards_catalog_items rci
-    LEFT JOIN fulfillment f ON rci.id = f.reward_catalog_item_id
-    GROUP BY rci.id, rci.item_name, rci.img_src, rci.item_cost, rci.item_description
-    ORDER BY fulfillment_count DESC
-    LIMIT 10;
-</select>
