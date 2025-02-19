@@ -1,30 +1,12 @@
-package com.jpmorgan.et.mapper;
+  <select id="getTop10FulfillmentsByRewardItem" resultMap="com.jpmorgan.et.model.RewardItem">
+    SELECT rci.id, rci.item_name, COUNT(f.reward_catalog_item_id) AS occurence FROM rewards_catalog_items rci LEFT JOIN fulfillment f on rci.id = f.reward_catalog_item_id
+    GROUP BY rci.id, rci.item_name, rci.img_src ORDER BY occurence DESC LIMIT 10;
+  </select>
 
-import com.jpmorgan.et.model.Fulfillment;
-import com.jpmorgan.et.model.FulfillmentByCustomer;
-import com.jpmorgan.et.model.FulfillmentFilter;
-import org.apache.ibatis.annotations.Mapper;
-import org.apache.ibatis.annotations.Param;
+table fulfillment -> id, customer_id, reward_catalog_item_id, qty, status, creation_date
+table rewards_catalog_items -> id, reward_catalog_id, item_name, item_cost, item_description, status, img_src
 
-import java.time.ZonedDateTime;
-import java.util.List;
-import java.util.Map;
+Unable to understand why this doesnt work
 
-/* TODO: Story #0.6
-    - Note the use of the @Mapper MyBatis annotation
-    - MyBatis will generate an implementation class for this interface
-    - MyBatis will make the implementation class a Spring Bean
-*/
-@Mapper
-public interface FulfillmentMapper {
-
-    List<FulfillmentByCustomer> getFulfillmentByCustomerId(final Long customerId);
-    List<FulfillmentByCustomer> getFulfillments();
-    void addFulfillment(Fulfillment fulfillment);
-
-    List<FulfillmentFilter> getFulfillmentFilteredData(
-            @Param("stDate") ZonedDateTime stDate,
-            @Param("endDate") ZonedDateTime endDate
-    );
-
-}
+i want to get top 10 most fulfilled items, this can be obained by checking the total number of times a reward_catalog_item has been fulfilled using reward_catalog_item_id field in the fulfillment table
+i want to return entire reward catalog items for those 10 most fulfilled ones
