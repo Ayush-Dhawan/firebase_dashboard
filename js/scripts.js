@@ -49,3 +49,6 @@ const RewardItemCard = ({reward}) => {
     </div>
   );
 };
+
+where there is select tag add a select dropdown with sorty by fullfilments: asc, desc options
+create a state which stores them, use .filter method to filter rewards and send the filtered rewards to map method
