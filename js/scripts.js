@@ -1,80 +1,57 @@
-import { useEffect, useState } from "react";
-import { getTop10FulFillments } from "../../api/FulfillmentApi";
-import NavBar from "../common/NavBar";
+start date:  2025-02-07 => format in which date is being set in date [picker
 
-export default function MostRedeemedRewards() {
-  const [rewards, setRewards] = useState([]);
-  const [sortOrder, setSortOrder] = useState("desc"); // Default: descending order
+    const [transactions, setTransactions] = useState([]);
+  const [startDate, setStartDate] = useState();
+  const [endDate, setEndDate] = useState();
 
   useEffect(() => {
-    async function getMostRedeemedRewards() {
-      const res = await getTop10FulFillments();
-      setRewards(res);
+    const setTrans = async () => {
+      const data = await getTransactions(customer.id);
+      setTransactions(data);
     }
+    if (transactions.length === 0) {
+      setTrans();
+    }
+  }, [customer.id, transactions.length]);
 
-    getMostRedeemedRewards();
-  }, []);
+  useEffect(() => {
+    console.log("start date: ", startDate)
+  }, [startDate]);
 
-  // Sorting function
-  const sortedRewards = [...rewards].sort((a, b) => {
-    return sortOrder === "asc"
-      ? a.fulfillment_count - b.fulfillment_count
-      : b.fulfillment_count - a.fulfillment_count;
-  });
+make an edge case where it wont let you set an end date before start date, other than that when both start and end date are selected and have a valid value (not undefined), filter transactions to show only data between those 2 dates (including those 2 dats)
 
-  return (
-    <>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column" }}>
-        {/* Sort Dropdown */}
-        <select
-          onChange={(e) => setSortOrder(e.target.value)}
-          value={sortOrder}
-          style={{
-            marginBottom: "10px",
-            padding: "8px",
-            fontSize: "16px",
-            borderRadius: "5px",
-            border: "1px solid #ccc",
-            cursor: "pointer",
-          }}
-        >
-          <option value="desc">Sort by Fulfillment: High to Low</option>
-          <option value="asc">Sort by Fulfillment: Low to High</option>
-        </select>
+category
+: 
+"Travel"
+creationDate
+: 
+"2020-09-17T18:47:52Z"
+creditCharge
+: 
+1100
+customerId
+: 
+1
+id
+: 
+1
+lastUpdateDate
+: 
+null
+multiplier
+: 
+0.05
+pointsEarned
+: 
+0
+productId
+: 
+null
+productName
+: 
+"Chase Regular"
+statusProcessed
+: 
+"new"
 
-        {/* Reward Grid */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "10px" }}>
-          {sortedRewards.map((item, index) => (
-            <RewardItemCard reward={item} key={index} />
-          ))}
-        </div>
-      </div>
-    </>
-  );
-}
-
-const RewardItemCard = ({ reward }) => {
-  return (
-    <div className="col-md-4" style={{ width: "100%" }}>
-      <div className="card shadow-sm mb-4">
-        <img
-          src={`${process.env.PUBLIC_URL}/images/${reward.img_src}.jpg`}
-          className="card-img-top"
-          alt={reward.item_name}
-        />
-        <div className="card-body">
-          <h5 className="card-title">{reward.item_name}</h5>
-          <p className="card-text">{reward.item_description}</p>
-          <ul className="list-group list-group-flush">
-            <li className="list-group-item">
-              <strong>Cost:</strong> ${reward.item_cost}
-            </li>
-            <li className="list-group-item">
-              <strong>Times Fulfilled:</strong> {reward.fulfillment_count}
-            </li>
-          </ul>
-        </div>
-      </div>
-    </div>
-  );
-};
+an item in transition data for reference
