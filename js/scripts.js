@@ -1,54 +1,4 @@
-The json has these fields
-
-id, customerId, productId, creditCharge, pointsEarned, statusProcessed, creationDate, lastUpdateDate, category, multiplier, productName
-
-please dont send everything to the excel, instead send Customer name, Credit Card Name, Category, Charge, Points, Processed Status, Transaction Date, customer name will simply be customer.name, dont worry for its logic its in rest of the code
-
-[
-  {
-    "id": 1,
-    "credit_card_id": 1,
-    "credit_charge": 1100,
-    "points_earned": 440,
-    "category": "Travel",
-    "status_processed": "new",
-    "creation_date": "2020-09-17 18:47:52.69",
-    "last_update_date": "2012-09-17 18:47:52.69"
-  },
-  {
-    "id": 2,
-    "credit_card_id": 1,
-    "credit_charge": 10,
-    "points_earned": 4,
-    "category": "Travel",
-    "status_processed": "new",
-    "creation_date": "2012-09-17 18:47:52.69",
-    "last_update_date": "2012-09-17 18:47:52.69"
-  },
-  {
-    "id": 3,
-    "credit_card_id": 3,
-    "credit_charge": 20,
-    "points_earned": 8,
-    "category": "Gift Card",
-    "status_processed": "new",
-    "creation_date": "2012-09-17 18:47:52.69",
-    "last_update_date": "2012-09-17 18:47:52.69"
-  },
-  {
-    "id": 4,
-    "credit_card_id": 2,
-    "credit_charge": 200,
-    "points_earned": 80,
-    "category": "Experience",
-    "status_processed": "new",
-    "creation_date": "2012-09-17 18:47:52.69",
-    "last_update_date": "2012-09-17 18:47:52.69"
-  }
-]
-heres sample data of credit_card_transactions
-
-
+credit cards table: 
 [
   {
     "id": 1,
@@ -94,4 +44,41 @@ heres sample data of credit_card_transactions
   }
 ]
 
-heres credit cards table
+credit vcard transactions table: 
+[
+  {
+    "id": 1,
+    "credit_card_id": 1,
+    "credit_charge": 1100,
+    "points_earned": 440,
+    "category": "Travel",
+    "status_processed": "new",
+    "creation_date": "2020-09-17 18:47:52.69",
+    "last_update_date": "2012-09-17 18:47:52.69"
+  },
+  {
+    "id": 2,
+    "credit_card_id": 1,
+    "credit_charge": 10,
+    "points_earned": 4,
+    "category": "Travel",
+    "status_processed": "new",
+    "creation_date": "2012-09-17 18:47:52.69",
+    "last_update_date": "2012-09-17 18:47:52.69"
+  }
+]
+
+
+
+SELECT
+    COALESCE(SUM(ct.points_earned) / 1.0, 0) AS credit_score
+    FROM credit_cards c
+    JOIN credit_card_transactions ct ON c.id = ct.credit_card_id
+    WHERE c.customer_id = ?
+    AND ct.creation_date >= strftime('%Y-%m-%d %H:%M:%S', 'now', '-10 years')
+    AND ct.status_processed = 1;
+
+
+this always returns {credit_score; 0}
+
+fix
