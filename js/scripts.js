@@ -1,16 +1,20 @@
-@RestController
-@RequestMapping("/v1.0/transactions")
-public class TransactionController {
+@Service
+public class TransactionService {
 
     @Autowired
-    private TransactionService transactionService;
+    private TransactionMapper transactionMapper;
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(TransactionController.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(TransactionService.class);
 
-    @GetMapping("/getCreditScore/{customerId}")
-    public ResponseEntity<Map<String, Object>> getCreditScore(@PathVariable Long customerId) {
-        LOGGER.info("Request Received for [/transactions/getCreditScore] with customerId: " + customerId);
-        Map<String, Object> response = transactionService.getCreditScoreByCustomerId(customerId);
-        return ResponseEntity.ok(response);
+    public Map<String, Object> getCreditScoreByCustomerId(Long customerId) {
+        Map<String, Object> result = transactionMapper.getCreditScoreByCustomerId(customerId);
+        
+        if (result == null || !result.containsKey("credit_score")) {
+            result = new HashMap<>();
+            result.put("credit_score", 0); // Ensure default value
+        }
+
+        LOGGER.info("Credit Score Response: " + result);
+        return result;
     }
 }
