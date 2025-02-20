@@ -14,3 +14,13 @@ WHERE c.customer_id = :customer_id
 AND ct.creation_date >= DATEADD(YEAR, -1, GETDATE()) -- Last calendar year
 AND ct.status_processed = 1 -- Only processed transactions
 GROUP BY c.customer_id;
+
+SELECT 
+    c.customer_id,
+    COALESCE(SUM(ct.points_earned) / 1200.0, 0) AS credit_score
+FROM credit_cards c
+JOIN credit_card_transactions ct ON c.id = ct.credit_card_id
+WHERE c.customer_id = ? 
+AND ct.creation_date >= strftime('%Y-%m-%d %H:%M:%S', 'now', '-1 year')
+AND ct.status_processed = 1 -- Only processed transactions
+GROUP BY c.customer_id;
