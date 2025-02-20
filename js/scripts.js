@@ -35,3 +35,17 @@ JOIN credit_card_transactions ct ON c.id = ct.credit_card_id
 WHERE c.customer_id = ? 
 AND ct.creation_date >= strftime('%Y-%m-%d %H:%M:%S', 'now', '-1 year')
 AND ct.status_processed = 1;
+
+
+
+  useEffect(() => {
+    async function getMostRedeemedRewards() {
+      const res = await getTop10FulFillments();
+      console.log("res: ", res);
+      setRewards(res);
+    }
+
+    getMostRedeemedRewards();
+  }, []);
+
+only set those res fields into setRewards where fulfillment_count > 0
