@@ -1,51 +1,5 @@
-credit_cards table => id, account_no, customer_id, product_id, img_src
+The json has these fields
 
-credit_card_transactions table => id, credit_card_id, credit_charge, points_earned, category, status_processed, creation_date, last_update_date (date format: 2020-09-17 18:47:52.69)
+id, customerId, productId, creditCharge, pointsEarned, statusProcessed, creationDate, lastUpdateDate, category, multiplier, productName
 
-i want you to write a SQL query where i only provide customer_id and you fetch me its credit score
- The Credit Score should be calculated using the points earned (by processing the Transactions) over the last calendar year divided by 1200 - i.e. pointsEarned/1200
-
-SELECT 
-    c.customer_id,
-    COALESCE(SUM(ct.points_earned) / 1200, 0) AS credit_score
-FROM credit_cards c
-JOIN credit_card_transactions ct ON c.id = ct.credit_card_id
-WHERE c.customer_id = :customer_id
-AND ct.creation_date >= DATEADD(YEAR, -1, GETDATE()) -- Last calendar year
-AND ct.status_processed = 1 -- Only processed transactions
-GROUP BY c.customer_id;
-
-SELECT 
-    c.customer_id,
-    COALESCE(SUM(ct.points_earned) / 1200.0, 0) AS credit_score
-FROM credit_cards c
-JOIN credit_card_transactions ct ON c.id = ct.credit_card_id
-WHERE c.customer_id = ? 
-AND ct.creation_date >= strftime('%Y-%m-%d %H:%M:%S', 'now', '-1 year')
-AND ct.status_processed = 1 -- Only processed transactions
-GROUP BY c.customer_id;
-
-
-
-
-SELECT 
-    COALESCE(SUM(ct.points_earned) / 1200.0, 0) AS credit_score
-FROM credit_cards c
-JOIN credit_card_transactions ct ON c.id = ct.credit_card_id
-WHERE c.customer_id = ? 
-AND ct.creation_date >= strftime('%Y-%m-%d %H:%M:%S', 'now', '-1 year')
-AND ct.status_processed = 1;
-
-
-
-  useEffect(() => {
-    async function getMostRedeemedRewards() {
-      const res = await getTop10FulFillments();
-      console.log("res: ", res);
-      setRewards(res);
-    }
-
-    getMostRedeemedRewards();
-  }, []);
-
-only set those res fields into setRewards where fulfillment_count > 0
+please dont send everything to the excel, instead send Customer name, Credit Card Name, Category, Charge, Points, Processed Status, Transaction Date, customer name will simply be customer.name, dont worry for its logic its in rest of the code
